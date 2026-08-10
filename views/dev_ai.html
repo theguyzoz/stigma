@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI API · Stigma Developers</title>
+{{styles}}
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <a href="/dashboard" style="display:flex;align-items:center;gap:10px;color:inherit;">
+      {{svg}}<span>Stigma</span>
+    </a>
+  </div>
+  <div class="user-chip">
+    <a class="btn ghost" href="/developers">Back</a>
+    <div class="avatar">{{accInitial}}</div>
+  </div>
+</header>
+
+<main class="container">
+  <h1>AI API</h1>
+  <p class="muted">OpenAI-compatible chat completions. 5,000 messages / day · 25 RPM on the free tier.</p>
+
+  <div class="grid cols-3" style="margin-top:20px;">
+    <div class="card">
+      <h3>Today</h3>
+      <p style="font-size:30px;margin:0;">{{usageDay}}</p>
+      <p class="muted" style="font-size:13px;">of 5,000 messages</p>
+    </div>
+    <div class="card">
+      <h3>This minute</h3>
+      <p style="font-size:30px;margin:0;">{{usageMinute}}</p>
+      <p class="muted" style="font-size:13px;">of 25 RPM</p>
+    </div>
+    <div class="card">
+      <h3>Plan</h3>
+      <p style="font-size:30px;margin:0;">{{devPlanLabel}}</p>
+      <p class="muted" style="font-size:13px;"><a href="/developers/billing">Upgrade</a></p>
+    </div>
+  </div>
+
+  <div class="card" style="max-width:760px;margin-top:20px;">
+    <h2>Endpoint</h2>
+    <pre style="background:#0e1116;color:#d8e3d4;padding:14px;border-radius:10px;overflow:auto;font-size:13px;">POST {{publicUrl}}/api/ai/chat
+Authorization: Bearer &lt;access_token&gt;
+Content-Type: application/json
+
+{
+  "messages": [
+    { "role": "system", "content": "You are Stigma, a concise assistant." },
+    { "role": "user",   "content": "Hello" }
+  ]
+}</pre>
+  </div>
+
+  <div class="card" style="max-width:760px;margin-top:18px;">
+    <h2>Model</h2>
+    <form method="POST" action="/developers/ai" class="row" style="gap:10px;">
+      <input type="text" name="aiModel" value="{{aiModel}}" placeholder="e.g. gpt-4o-mini">
+      <button class="btn primary" type="submit">Save</button>
+    </form>
+    <p class="muted" style="font-size:13px;margin-top:8px;">The model name is sent to your upstream provider (see <code>/ai/gpt.js</code>).</p>
+  </div>
+</main>
+
+<footer class="site">© {{year}} Stigma</footer>
+</body>
+</html>

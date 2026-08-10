@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Developers · Stigma</title>
+{{styles}}
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <a href="/dashboard" style="display:flex;align-items:center;gap:10px;color:inherit;">
+      {{svg}}<span>Stigma</span>
+    </a>
+  </div>
+  <div class="user-chip">
+    <a class="btn ghost" href="/dashboard">Back</a>
+    <div class="avatar">{{accInitial}}</div>
+  </div>
+</header>
+
+<main class="container">
+  <h1>Build with Stigma</h1>
+  <p class="muted">Plug into Stigma accounts, send messages through our AI, accept mobile money.</p>
+
+  <div class="card" style="margin-top:18px;max-width:640px;">
+    <h2>Enable a developer account</h2>
+    <p class="muted">It lives on top of your current Stigma account. You can disable it any time.</p>
+    <ul style="padding-left:18px;">
+      <li>OAuth API + ready-made script &amp; npm client</li>
+      <li>AI chat API — 5,000 messages / day, 25 RPM on the free tier</li>
+      <li>Pay now with Ecocash, OneMoney or Innbucks</li>
+    </ul>
+    <form method="POST" action="/developers/enable" style="margin-top:14px;">
+      <button class="btn primary" type="submit">Enable developer account</button>
+    </form>
+  </div>
+</main>
+
+<footer class="site">© {{year}} Stigma</footer>
+</body>
+</html>

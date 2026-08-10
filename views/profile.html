@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manage profile · Stigma</title>
+{{styles}}
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <a href="/dashboard" style="display:flex;align-items:center;gap:10px;color:inherit;">
+      {{svg}}<span>Stigma</span>
+    </a>
+  </div>
+  <div class="user-chip">
+    <a class="btn ghost" href="/dashboard">Back</a>
+    <div class="avatar">{{accInitial}}</div>
+  </div>
+</header>
+
+<main class="container">
+  <h1>Manage profile</h1>
+  <p class="muted">Update your account details. Changes bloom immediately.</p>
+
+  {{noticeBlock}}
+
+  <form class="card" method="POST" action="/profile" style="max-width:560px;">
+    <div class="grid cols-2">
+      <div class="field">
+        <label for="firstName">First name</label>
+        <input id="firstName" name="firstName" type="text" value="{{accFirstName}}" required>
+      </div>
+      <div class="field">
+        <label for="lastName">Last name</label>
+        <input id="lastName" name="lastName" type="text" value="{{accLastName}}" required>
+      </div>
+    </div>
+    <div class="field">
+      <label for="displayName">Display name (optional)</label>
+      <input id="displayName" name="displayName" type="text" value="{{accDisplayName}}" placeholder="What should we call you?">
+    </div>
+    <div class="field">
+      <label for="phone">Phone number</label>
+      <input id="phone" name="phone" type="tel" value="{{accPhone}}" required>
+    </div>
+    <div class="field">
+      <label for="secondaryEmail">Secondary email</label>
+      <input id="secondaryEmail" name="secondaryEmail" type="email" value="{{accSecondaryEmail}}" placeholder="Optional, for recovery & OAuth email scope">
+    </div>
+    <div class="row between" style="margin-top:18px;">
+      <span class="muted" style="font-size:13px;">Account ID: <code>{{accId}}</code></span>
+      <button class="btn primary" type="submit">Save</button>
+    </div>
+  </form>
+</main>
+
+<footer class="site">© {{year}} Stigma</footer>
+</body>
+</html>

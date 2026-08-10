@@ -1,0 +1,19 @@
+{
+  "name": "stigma",
+  "version": "0.1.0",
+  "description": "Stigma — your account, your apps, your way.",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.6",
+    "dotenv": "^16.6.1",
+    "express": "^4.19.2",
+    "googleapis": "^144.0.0",
+    "node-fetch": "^2.7.0"
+  }
+}

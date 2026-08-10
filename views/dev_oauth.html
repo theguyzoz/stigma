@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OAuth · Stigma Developers</title>
+{{styles}}
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <a href="/dashboard" style="display:flex;align-items:center;gap:10px;color:inherit;">
+      {{svg}}<span>Stigma</span>
+    </a>
+  </div>
+  <div class="user-chip">
+    <a class="btn ghost" href="/developers">Back</a>
+    <div class="avatar">{{accInitial}}</div>
+  </div>
+</header>
+
+<main class="container">
+  <h1>OAuth API</h1>
+  <p class="muted">A single client you can reuse for web, mobile and CLI apps.</p>
+
+  <div class="card" style="max-width:760px;">
+    <h2>Client credentials</h2>
+    <div class="grid cols-2">
+      <div class="field">
+        <label>Client ID</label>
+        <input type="text" value="{{clientId}}" readonly>
+      </div>
+      <div class="field">
+        <label>Client secret</label>
+        <input type="text" value="{{clientSecret}}" readonly>
+      </div>
+    </div>
+    <p class="muted" style="font-size:13px;">Treat the client secret like a password. Anyone with it can impersonate your app.</p>
+  </div>
+
+  <div class="card" style="max-width:760px;margin-top:18px;">
+    <h2>Authorize URL</h2>
+    <p>Send your users here. After consent they come back to your <code>redirect_uri</code> with a <code>?code=...</code> you exchange for an access token.</p>
+    <pre style="background:#0e1116;color:#d8e3d4;padding:14px;border-radius:10px;overflow:auto;font-size:13px;">{{publicUrl}}/oauth/authorize?client_id={{clientId}}&amp;redirect_uri=YOUR_REDIRECT_URI&amp;response_type=code&amp;scope=profile+email&amp;state=OPTIONAL</pre>
+  </div>
+
+  <div class="card" style="max-width:760px;margin-top:18px;">
+    <h2>Token exchange</h2>
+    <pre style="background:#0e1116;color:#d8e3d4;padding:14px;border-radius:10px;overflow:auto;font-size:13px;">curl -X POST {{publicUrl}}/oauth/token \
+  -d grant_type=authorization_code \
+  -d code=THE_CODE \
+  -d client_id={{clientId}} \
+  -d client_secret={{clientSecret}} \
+  -d redirect_uri=YOUR_REDIRECT_URI</pre>
+  </div>
+
+  <div class="card" style="max-width:760px;margin-top:18px;">
+    <h2>User info</h2>
+    <pre style="background:#0e1116;color:#d8e3d4;padding:14px;border-radius:10px;overflow:auto;font-size:13px;">curl {{publicUrl}}/oauth/userinfo -H "Authorization: Bearer ACCESS_TOKEN"</pre>
+  </div>
+
+  <div class="card" style="max-width:760px;margin-top:18px;">
+    <h2>Drop-in script &amp; npm</h2>
+    <p>Server-side:</p>
+    <pre style="background:#0e1116;color:#d8e3d4;padding:14px;border-radius:10px;overflow:auto;font-size:13px;">// stigma.js
+const { Stigma } = require('stigma-sdk'); // or just copy the helper below
+const stigma = new Stigma({
+  clientId: '{{clientId}}',
+  clientSecret: '{{clientSecret}}',
+  redirectUri: 'YOUR_REDIRECT_URI'
+});
+// stigma.handleCallback(req) -> { accessToken, user }
+module.exports = stigma;</pre>
+
+    <p style="margin-top:14px;">Browser / frontend (popup flow):</p>
+    <pre style="background:#0e1116;color:#d8e3d4;padding:14px;border-radius:10px;overflow:auto;font-size:13px;">&lt;script src="/static/js/stigma.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+  Stigma.signIn({
+    clientId: '{{clientId}}',
+    redirectUri: window.location.origin + '/auth/stigma/callback'
+  }).then(user =&gt; {
+    console.log(user); // { sub, name, email, phone, given_name, family_name }
+  });
+&lt;/script&gt;</pre>
+  </div>
+</main>
+
+<footer class="site">© {{year}} Stigma</footer>
+</body>
+</html>

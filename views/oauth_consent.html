@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Authorize · Stigma</title>
+{{styles}}
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">{{svg}}<span>Stigma</span></div>
+  <div class="user-chip">
+    <div class="avatar">{{accInitial}}</div>
+    <div>
+      <div style="font-size:14px;">{{accName}}</div>
+      <div class="muted" style="font-size:12px;">{{accPhone}}</div>
+    </div>
+  </div>
+</header>
+
+<main class="consent">
+  <div class="card">
+    <h1 style="font-size:20px;">{{clientName}} wants to access your Stigma account</h1>
+    <p class="muted">It will be able to:</p>
+    <ul style="padding-left:18px;">
+      <li>See your name and surname</li>
+      <li>See your email (if you added one)</li>
+      <li>See your phone number</li>
+    </ul>
+    <p class="muted" style="font-size:13px;">You can revoke access any time from your Stigma profile.</p>
+    <div class="divider"></div>
+    <p class="muted" style="font-size:12px;">Redirect to: <code>{{redirectUri}}</code></p>
+
+    <form method="POST" action="/oauth/authorize" class="row between" style="margin-top:14px;">
+      <input type="hidden" name="client_id" value="{{clientId}}">
+      <input type="hidden" name="redirect_uri" value="{{redirectUri}}">
+      <input type="hidden" name="state" value="{{state}}">
+      <input type="hidden" name="scope" value="{{scope}}">
+      <button class="btn" type="submit" name="approve" value="no">Cancel</button>
+      <button class="btn primary" type="submit" name="approve" value="yes">Allow</button>
+    </form>
+  </div>
+</main>
+
+<footer class="site">Stigma · your account, your apps, your way.</footer>
+</body>
+</html>

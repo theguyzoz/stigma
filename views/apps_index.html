@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Apps · Stigma</title>
+{{styles}}
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <a href="/dashboard" style="display:flex;align-items:center;gap:10px;color:inherit;">
+      {{svg}}<span>Stigma</span>
+    </a>
+  </div>
+  <div class="user-chip">
+    <a class="btn ghost" href="/dashboard">Back</a>
+    <div class="avatar">{{accInitial}}</div>
+  </div>
+</header>
+
+<main class="container">
+  <h1>Apps</h1>
+  <p class="muted">Free, open-source, already hosted. Click in to open.</p>
+
+  {{errorBlock}}
+
+  <div class="grid cols-3" style="margin-top:24px;">
+    {{appsList}}
+  </div>
+</main>
+
+<footer class="site">© {{year}} Stigma</footer>
+</body>
+</html>

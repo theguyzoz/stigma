@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Developers · Stigma</title>
+{{styles}}
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <a href="/dashboard" style="display:flex;align-items:center;gap:10px;color:inherit;">
+      {{svg}}<span>Stigma</span>
+    </a>
+  </div>
+  <div class="user-chip">
+    <a class="btn ghost" href="/dashboard">Back</a>
+    <div class="avatar">{{accInitial}}</div>
+  </div>
+</header>
+
+<main class="container">
+  <h1>Developer console</h1>
+  <p class="muted">Account: <strong>{{accName}}</strong> · Plan: <span class="pill {{planPill}}">{{devPlan}}</span></p>
+
+  <div class="grid cols-3" style="margin-top:20px;">
+    <a class="card tile" href="/developers/oauth">
+      <div class="icon">{{iconKey}}</div>
+      <h3>OAuth API</h3>
+      <p>Get name, surname, phone & email from Stigma users with consent.</p>
+    </a>
+    <a class="card tile" href="/developers/ai">
+      <div class="icon">{{iconAi}}</div>
+      <h3>AI API</h3>
+      <p>Send chat completions. 5,000/day · 25 RPM on the free tier.</p>
+    </a>
+    <a class="card tile" href="/developers/billing">
+      <div class="icon">{{iconMoney}}</div>
+      <h3>Billing</h3>
+      <p>Upgrade your plan with Ecocash, OneMoney or Innbucks.</p>
+    </a>
+  </div>
+</main>
+
+<footer class="site">© {{year}} Stigma</footer>
+</body>
+</html>

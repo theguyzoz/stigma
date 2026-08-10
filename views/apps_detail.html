@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{appName}} · Stigma</title>
+{{styles}}
+<style>
+  .app-shell { display: flex; flex-direction: column; height: calc(100vh - 60px); }
+  .app-frame { flex: 1; border: 0; width: 100%; }
+  .app-bar { display:flex; align-items:center; justify-content:space-between; padding:10px 16px; border-bottom:1px solid var(--line); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <a href="/dashboard" style="display:flex;align-items:center;gap:10px;color:inherit;">
+      {{svg}}<span>Stigma</span>
+    </a>
+  </div>
+  <div class="user-chip">
+    <a class="btn ghost" href="/apps">All apps</a>
+    <div class="avatar">{{accInitial}}</div>
+  </div>
+</header>
+
+<div class="app-shell">
+  <div class="app-bar">
+    <div>
+      <strong>{{appName}}</strong>
+      <span class="muted" style="margin-left:8px;">{{appDescription}}</span>
+    </div>
+    <a class="btn" href="{{appUrl}}" target="_blank" rel="noopener">Open in new tab</a>
+  </div>
+  <iframe class="app-frame" src="{{appUrl}}" referrerpolicy="no-referrer" allow="autoplay; encrypted-media; fullscreen"></iframe>
+</div>
+</body>
+</html>

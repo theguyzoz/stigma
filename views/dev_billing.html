@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Billing · Stigma Developers</title>
+{{styles}}
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <a href="/dashboard" style="display:flex;align-items:center;gap:10px;color:inherit;">
+      {{svg}}<span>Stigma</span>
+    </a>
+  </div>
+  <div class="user-chip">
+    <a class="btn ghost" href="/developers">Back</a>
+    <div class="avatar">{{accInitial}}</div>
+  </div>
+</header>
+
+<main class="container">
+  <h1>Upgrade your plan</h1>
+  <p class="muted">Pay with mobile money. Powered by Paynow.</p>
+
+  {{errorBlock}}
+
+  <div class="grid cols-3" style="margin-top:18px;">
+    <div class="card">
+      <h3>Starter</h3>
+      <p style="font-size:24px;margin:0;">Free</p>
+      <ul style="padding-left:18px;">
+        <li>5,000 messages / day</li>
+        <li>25 RPM</li>
+        <li>Community support</li>
+      </ul>
+    </div>
+    <div class="card" style="border-color:var(--accent);">
+      <h3>Pro <span class="pill green">popular</span></h3>
+      <p style="font-size:24px;margin:0;">$5 / month</p>
+      <ul style="padding-left:18px;">
+        <li>100,000 messages / day</li>
+        <li>250 RPM</li>
+        <li>Priority support</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Business</h3>
+      <p style="font-size:24px;margin:0;">$20 / month</p>
+      <ul style="padding-left:18px;">
+        <li>1,000,000 messages / day</li>
+        <li>1,000 RPM</li>
+        <li>Phone &amp; email support</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card" style="max-width:560px;margin-top:24px;">
+    <h2>Pay with mobile money</h2>
+    <form method="POST" action="/developers/billing/checkout">
+      <div class="field">
+        <label for="plan">Plan</label>
+        <select id="plan" name="plan">
+          <option value="starter">Starter — free (no charge)</option>
+          <option value="pro">Pro — $5</option>
+          <option value="business">Business — $20</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="method">Method</label>
+        <select id="method" name="method">
+          <option value="ecocash">Ecocash</option>
+          <option value="onemoney">OneMoney</option>
+          <option value="innbucks">Innbucks</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="phone">Mobile number</label>
+        <input id="phone" name="phone" type="tel" placeholder="+263 77 ..." required>
+      </div>
+      <button class="btn primary" type="submit">Pay with Paynow</button>
+    </form>
+  </div>
+</main>
+
+<footer class="site">© {{year}} Stigma</footer>
+</body>
+</html>

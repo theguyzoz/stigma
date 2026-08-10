@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Choose an account · Stigma</title>
+{{styles}}
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">{{svg}}<span>Stigma</span></div>
+  <div class="user-chip">
+    <div class="avatar">{{userInitial}}</div>
+    <div>
+      <div style="font-size:14px;">{{userName}}</div>
+      <div class="muted" style="font-size:12px;">{{userEmail}}</div>
+    </div>
+  </div>
+</header>
+
+<main class="picker">
+  {{logoLg}}
+  <h1>Choose an account</h1>
+  <p class="muted">to continue to <strong>stigma</strong></p>
+
+  {{messageBlock}}
+
+  <form class="account-list" id="pickerForm" method="POST" action="/accounts/pick">
+    {{accountsList}}
+
+    <a class="use-another" href="/accounts/signin?redirect={{redirect}}">
+      <div class="avatar">+</div>
+      <div>
+        <div class="name">Use another account</div>
+        <div class="sub">Sign in with a different Stigma account</div>
+      </div>
+    </a>
+    <a class="use-another" href="/accounts/create?redirect={{redirect}}">
+      <div class="avatar">✿</div>
+      <div>
+        <div class="name">Create an account</div>
+        <div class="sub">Join Stigma in a few petals</div>
+      </div>
+    </a>
+  </form>
+
+  <p class="muted" style="font-size:12px;margin-top:24px;">
+    By continuing, Stigma will be able to see your name and phone number.
+    <a href="/signout">Sign out</a>
+  </p>
+</main>
+
+<footer class="site">Stigma · your account, your apps, your way.</footer>
+<script>
+  // Each account button posts its id to /accounts/pick which 302s to /accounts/confirm/:id
+  document.querySelectorAll('[data-acc-id]').forEach((el) => {
+    el.addEventListener('click', (e) => {
+      e.preventDefault();
+      const id = el.getAttribute('data-acc-id');
+      const redirect = el.getAttribute('data-redirect') || '/dashboard';
+      window.location = '/accounts/confirm/' + encodeURIComponent(id) + '?redirect=' + encodeURIComponent(redirect);
+    });
+  });
+</script>
+</body>
+</html>

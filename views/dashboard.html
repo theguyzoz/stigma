@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stigma</title>
+{{styles}}
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">{{svg}}<span>Stigma</span></div>
+  <div class="user-chip">
+    <a class="btn ghost" href="/profile" title="Manage profile">Manage profile</a>
+    <a class="btn ghost" href="/signout" title="Sign out">Sign out</a>
+    <div class="avatar">{{accInitial}}</div>
+  </div>
+</header>
+
+<main class="container">
+  <h1>Hi, {{accFirstName}}.</h1>
+  <p class="muted">Stigma is your garden. Pick something to tend to.</p>
+
+  <div class="grid cols-3" style="margin-top:24px;">
+    <a class="card tile" href="/apps">
+      <div class="icon">{{iconApps}}</div>
+      <h3>Open Apps</h3>
+      <p>Live radio, weather, live TV and 10 more free tools.</p>
+    </a>
+    <a class="card tile" href="/profile">
+      <div class="icon">{{iconProfile}}</div>
+      <h3>Manage Profile</h3>
+      <p>Edit your name, phone number, secondary email and more.</p>
+    </a>
+    <a class="card tile" href="/developers">
+      <div class="icon">{{iconDev}}</div>
+      <h3>Developers</h3>
+      <p>OAuth, AI API, billing — build with Stigma.</p>
+    </a>
+  </div>
+
+  <div class="divider"></div>
+
+  <h2>Your accounts</h2>
+  <div class="grid cols-3">
+    {{accountsList}}
+  </div>
+</main>
+
+<footer class="site">© {{year}} Stigma · your account, your apps, your way.</footer>
+</body>
+</html>

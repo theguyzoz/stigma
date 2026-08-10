@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in · Stigma</title>
+{{styles}}
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">{{svg}}<span>Stigma</span></div>
+</header>
+
+<main class="narrow">
+  <div style="text-align:center;">{{logoLg}}</div>
+  <h1 style="text-align:center;margin-top:12px;">Sign in</h1>
+  <p class="muted" style="text-align:center;">to continue to Stigma</p>
+
+  {{errorBlock}}
+
+  <form class="card" method="POST" action="/accounts/signin" style="margin-top:18px;">
+    <input type="hidden" name="redirect" value="{{redirect}}">
+    <div class="field">
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" autocomplete="email" required>
+    </div>
+    <div class="field">
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required>
+    </div>
+    <div class="row between" style="margin-top:16px;">
+      <a href="/accounts/create?redirect={{redirect}}">Create account</a>
+      <button class="btn primary" type="submit">Sign in</button>
+    </div>
+  </form>
+</main>
+
+<footer class="site">Stigma · your account, your apps, your way.</footer>
+</body>
+</html>

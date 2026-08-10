@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Create account · Stigma</title>
+{{styles}}
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">{{svg}}<span>Stigma</span></div>
+</header>
+
+<main class="narrow">
+  <div style="text-align:center;">{{logoLg}}</div>
+  <h1 style="text-align:center;margin-top:12px;">Create your Stigma account</h1>
+  <p class="muted" style="text-align:center;">Just a few petals.</p>
+
+  {{errorBlock}}
+
+  <form class="card" method="POST" action="/accounts/create" style="margin-top:18px;">
+    <input type="hidden" name="redirect" value="{{redirect}}">
+    <div class="grid cols-2">
+      <div class="field">
+        <label for="firstName">First name</label>
+        <input id="firstName" name="firstName" type="text" autocomplete="given-name" required>
+      </div>
+      <div class="field">
+        <label for="lastName">Last name</label>
+        <input id="lastName" name="lastName" type="text" autocomplete="family-name" required>
+      </div>
+    </div>
+    <div class="field">
+      <label for="phone">Phone number</label>
+      <input id="phone" name="phone" type="tel" placeholder="+263 77 ..." autocomplete="tel" required>
+    </div>
+    <div class="field">
+      <label for="password">Strong password</label>
+      <input id="password" name="password" type="password" minlength="8" autocomplete="new-password" required>
+      <p class="muted" style="font-size:12px;margin-top:6px;">At least 8 characters. Mix it up like pollen in the wind.</p>
+    </div>
+    <div class="row between" style="margin-top:16px;">
+      <a href="/accounts/signin?redirect={{redirect}}">Sign in instead</a>
+      <button class="btn primary" type="submit">Create account</button>
+    </div>
+  </form>
+</main>
+
+<footer class="site">Stigma · your account, your apps, your way.</footer>
+</body>
+</html>

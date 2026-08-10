@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Drive backup · Stigma</title>
+{{styles}}
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">{{svg}}<span>Stigma · Drive backup</span></div>
+</header>
+
+<main class="container">
+  <h1>Google Drive auto-backup</h1>
+  <p class="muted">Paste a Google Cloud service-account JSON below. Stigma will use it to upload daily snapshots of your database to your Drive. The secret is never shown again.</p>
+
+  {{statusBlock}}
+
+  {{#showForm}}
+  <form class="card" method="POST" action="/drive-setup?secret={{secretToken}}" style="max-width:720px;margin-top:18px;">
+    <div class="field">
+      <label for="json">Service account JSON</label>
+      <textarea id="json" name="json" rows="12" placeholder='{ "type": "service_account", "project_id": "...", "private_key": "...", "client_email": "..." }' required></textarea>
+    </div>
+    <div class="field">
+      <label for="folderId">Drive folder ID (optional)</label>
+      <input id="folderId" name="folderId" type="text" placeholder="Leave blank to upload to the service account's root">
+    </div>
+    <button class="btn primary" type="submit">Save &amp; run first backup</button>
+  </form>
+  {{/showForm}}
+
+  <p class="muted" style="font-size:13px;margin-top:18px;">Configured: <strong>{{configuredLabel}}</strong></p>
+</main>
+</body>
+</html>
