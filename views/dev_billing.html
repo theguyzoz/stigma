@@ -5,6 +5,27 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Billing · Stigma Developers</title>
 {{styles}}
+<style>
+  .balance-card { background:var(--surface);border:2px solid var(--accent);border-radius:12px;padding:24px 28px;max-width:420px;margin-bottom:28px; }
+  .balance-amount { font-size:40px;font-weight:700;color:var(--accent);margin:0;line-height:1; }
+  .balance-label { font-size:13px;color:var(--muted);margin-top:4px; }
+  .plan-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:28px; }
+  .plan-card { background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:18px 20px; }
+  .plan-card.current { border-color:var(--accent);background:color-mix(in srgb,var(--accent) 6%,var(--surface)); }
+  .plan-card h3 { margin:0 0 4px; }
+  .plan-price { font-size:22px;font-weight:700;margin:0 0 10px; }
+  .plan-card ul { padding-left:18px;margin:0 0 14px;font-size:13px;color:var(--muted); }
+  .plan-card ul li { margin-bottom:3px; }
+  .activate-btn { width:100%; }
+  .section-title { font-size:15px;font-weight:600;margin:28px 0 12px;border-bottom:1px solid var(--border);padding-bottom:8px; }
+  .deposit-form { background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:22px 24px;max-width:480px; }
+  .ledger { width:100%;border-collapse:collapse;font-size:13px;margin-top:8px; }
+  .ledger th { text-align:left;padding:6px 10px;border-bottom:1px solid var(--border);color:var(--muted);font-weight:500; }
+  .ledger td { padding:8px 10px;border-bottom:1px solid var(--border); }
+  .ledger tr:last-child td { border-bottom:none; }
+  .notice-banner { background:color-mix(in srgb,#1a7f4b 10%,var(--surface));border:1px solid #1a7f4b;color:#1a7f4b;border-radius:8px;padding:10px 14px;margin-bottom:18px;font-size:14px; }
+  .amount-hint { font-size:12px;color:var(--muted);margin-top:4px; }
+</style>
 </head>
 <body>
 <header class="topbar">
@@ -20,54 +41,85 @@
 </header>
 
 <main class="container">
-  <h1>Upgrade your plan</h1>
-  <p class="muted">Pay with mobile money. Powered by Paynow.</p>
+  <h1>Billing &amp; Balance</h1>
+  <p class="muted">Top up your balance, then activate any plan instantly — no payment mismatches.</p>
 
+  {{#message}}<div class="notice-banner">{{message}}</div>{{/message}}
   {{errorBlock}}
 
-  <div class="grid cols-3" style="margin-top:18px;">
-    <div class="card">
-      <h3>Starter</h3>
-      <p style="font-size:24px;margin:0;">Free</p>
-      <ul style="padding-left:18px;">
+  <!-- Balance -->
+  <div class="balance-card">
+    <div class="balance-amount">${{balanceDollars}}</div>
+    <div class="balance-label">Available balance · USD</div>
+  </div>
+
+  <!-- Plans -->
+  <div class="section-title">Choose a plan</div>
+  <div class="plan-grid">
+
+    <div class="plan-card{{#isStarter}} current{{/isStarter}}">
+      <h3>Starter {{#isStarter}}<span class="pill green">current</span>{{/isStarter}}</h3>
+      <div class="plan-price">Free</div>
+      <ul>
         <li>5,000 messages / day</li>
         <li>25 RPM</li>
         <li>Community support</li>
       </ul>
+      <span class="pill" style="font-size:12px;">No charge</span>
     </div>
-    <div class="card" style="border-color:var(--accent);">
-      <h3>Pro <span class="pill green">popular</span></h3>
-      <p style="font-size:24px;margin:0;">$5 / month</p>
-      <ul style="padding-left:18px;">
+
+    <div class="plan-card{{#isPro}} current{{/isPro}}" style="{{#isPro}}{{/isPro}}border-color:var(--accent);">
+      <h3>Pro {{#isPro}}<span class="pill green">current</span>{{/isPro}}</h3>
+      <div class="plan-price">$5 / mo</div>
+      <ul>
         <li>100,000 messages / day</li>
         <li>250 RPM</li>
         <li>Priority support</li>
       </ul>
+      {{#isPro}}
+        <span class="pill green" style="font-size:12px;">Active</span>
+      {{/isPro}}
+      {{#notPro}}
+        <form method="POST" action="/developers/billing/activate">
+          <input type="hidden" name="plan" value="pro">
+          <button class="btn primary activate-btn" type="submit">Activate — $5</button>
+        </form>
+      {{/notPro}}
     </div>
-    <div class="card">
-      <h3>Business</h3>
-      <p style="font-size:24px;margin:0;">$20 / month</p>
-      <ul style="padding-left:18px;">
+
+    <div class="plan-card{{#isBusiness}} current{{/isBusiness}}">
+      <h3>Business {{#isBusiness}}<span class="pill green">current</span>{{/isBusiness}}</h3>
+      <div class="plan-price">$20 / mo</div>
+      <ul>
         <li>1,000,000 messages / day</li>
         <li>1,000 RPM</li>
         <li>Phone &amp; email support</li>
       </ul>
+      {{#isBusiness}}
+        <span class="pill green" style="font-size:12px;">Active</span>
+      {{/isBusiness}}
+      {{#notBusiness}}
+        <form method="POST" action="/developers/billing/activate">
+          <input type="hidden" name="plan" value="business">
+          <button class="btn primary activate-btn" type="submit">Activate — $20</button>
+        </form>
+      {{/notBusiness}}
     </div>
+
   </div>
 
-  <div class="card" style="max-width:560px;margin-top:24px;">
-    <h2>Pay with mobile money</h2>
-    <form method="POST" action="/developers/billing/checkout">
+  <!-- Top-up form -->
+  <div class="section-title">Top up balance</div>
+  <div class="deposit-form">
+    <p style="margin-top:0;font-size:14px;">Deposit any amount via mobile money. Funds appear in your balance once Paynow confirms payment.</p>
+    <form method="POST" action="/developers/billing/deposit">
       <div class="field">
-        <label for="plan">Plan</label>
-        <select id="plan" name="plan">
-          <option value="starter">Starter — free (no charge)</option>
-          <option value="pro">Pro — $5</option>
-          <option value="business">Business — $20</option>
-        </select>
+        <label for="amount">Amount (USD)</label>
+        <input id="amount" name="amount" type="number" min="1" max="500" step="0.01" placeholder="e.g. 5.00" required>
+        <div class="amount-hint">You can deposit any amount — $1 minimum. Balance never expires.</div>
       </div>
       <div class="field">
-        <label for="method">Method</label>
+        <label for="method">Payment method</label>
         <select id="method" name="method">
           <option value="ecocash">Ecocash</option>
           <option value="onemoney">OneMoney</option>
@@ -78,9 +130,25 @@
         <label for="phone">Mobile number</label>
         <input id="phone" name="phone" type="tel" placeholder="+263 77 ..." required>
       </div>
-      <button class="btn primary" type="submit">Pay with Paynow</button>
+      <button class="btn primary" type="submit">Deposit via Paynow</button>
     </form>
   </div>
+
+  <!-- Transaction history -->
+  {{#hasHistory}}
+  <div class="section-title">Transaction history</div>
+  <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:10px;overflow:hidden;max-width:560px;">
+    <table class="ledger">
+      <thead>
+        <tr><th>Date</th><th>Description</th><th>Amount</th></tr>
+      </thead>
+      <tbody>
+        {{historyRows}}
+      </tbody>
+    </table>
+  </div>
+  {{/hasHistory}}
+
 </main>
 
 <footer class="site">© {{year}} Stigma</footer>

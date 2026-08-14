@@ -21,7 +21,11 @@
 
 <main class="container">
   <h1>Developer console</h1>
-  <p class="muted">Account: <strong>{{accName}}</strong> · Plan: <span class="pill {{planPill}}">{{devPlan}}</span></p>
+  <p class="muted">
+    Account: <strong>{{accName}}</strong>
+    &nbsp;·&nbsp; Plan: <span class="pill {{planPill}}">{{devPlanLabel}}</span>
+    &nbsp;·&nbsp; Balance: <strong>${{balanceDollars}}</strong>
+  </p>
 
   <div class="grid cols-3" style="margin-top:20px;">
     <a class="card tile" href="/developers/oauth">
@@ -37,7 +41,7 @@
     <a class="card tile" href="/developers/billing">
       <div class="icon">{{iconMoney}}</div>
       <h3>Billing</h3>
-      <p>Upgrade your plan with Ecocash, OneMoney or Innbucks.</p>
+      <p>Top up your balance and activate a plan. No payment mismatches.</p>
     </a>
   </div>
 </main>

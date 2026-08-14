@@ -21,8 +21,10 @@
  *   GET  /developers/oauth                -> OAuth provider config
  *   GET  /developers/ai                   -> AI API config
  *   POST /developers/ai                   -> update AI key / model
- *   GET  /developers/billing              -> upgrade plan / Paynow
- *   POST /developers/billing/checkout     -> create Paynow payment
+ *   GET  /developers/billing              -> balance, top-up, plan activation
+ *   POST /developers/billing/deposit      -> initiate Paynow top-up (any amount)
+ *   POST /developers/billing/activate     -> spend balance to activate a plan
+ *   POST /api/paynow/update              -> Paynow webhook (credits balance on confirmation)
  *
  *   GET  /oauth/authorize                 -> consent screen for client apps
  *   POST /oauth/authorize                 -> approve
@@ -142,7 +144,9 @@ function render(file, res, vars = {}) {
       </div>`).join('');
   }
   if (vars.message && !merged.messageBlock) {
-    merged.messageBlock = `<div class="alert" style="display:inline-block;padding:6px 10px;font-size:13px;">${vars.message}</div>`;
+    merged.messageBlock = `<div class="notice" style="display:inline-block;padding:6px 10px;font-size:13px;">${vars.message}</div>`;
+    // Keep merged.message intact so {{#message}} conditional blocks in views still render
+    merged.message = vars.message;
   }
   if (vars.error && !merged.errorBlock) {
     merged.errorBlock = `<div class="alert">${vars.error}</div>`;
@@ -151,10 +155,17 @@ function render(file, res, vars = {}) {
     merged.noticeBlock = `<div class="notice">${vars.saved}</div>`;
   }
   if (vars.dev) {
+    const plan = vars.dev.plan || 'free';
     merged.aiModel = vars.dev.aiModel || '';
-    merged.devPlan = vars.dev.plan || 'free';
-    merged.devPlanLabel = ({ free: 'Free', pro: 'Pro', business: 'Business' }[vars.dev.plan] || 'Free');
-    merged.planPill = vars.dev.plan === 'free' ? '' : 'green';
+    merged.devPlan = plan;
+    merged.devPlanLabel = ({ free: 'Free', pro: 'Pro', business: 'Business' }[plan] || 'Free');
+    merged.planPill = plan === 'free' ? '' : 'green';
+    // Plan conditionals for billing view
+    merged.isStarter  = plan === 'free'     ? 'yes' : '';
+    merged.isPro      = plan === 'pro'      ? 'yes' : '';
+    merged.isBusiness = plan === 'business' ? 'yes' : '';
+    merged.notPro      = plan !== 'pro'      ? 'yes' : '';
+    merged.notBusiness = plan !== 'business' ? 'yes' : '';
   }
 
   // ---- 3. Tiny template engine ----
@@ -327,7 +338,8 @@ app.post('/profile', requireConfirmedAccount, (req, res) => {
 app.get('/developers', requireConfirmedAccount, (req, res) => {
   const acc = session.confirmedAccount(req);
   const dev = db.getDeveloper(acc.id);
-  render(dev ? 'dev_dashboard' : 'dev_promo', res, { acc, dev });
+  const balanceDollars = dev ? (db.getBalance(acc.id) / 100).toFixed(2) : '0.00';
+  render(dev ? 'dev_dashboard' : 'dev_promo', res, { acc, dev, balanceDollars });
 });
 
 app.post('/developers/enable', requireConfirmedAccount, (req, res) => {
@@ -372,27 +384,111 @@ app.get('/developers/billing', requireConfirmedAccount, (req, res) => {
   const acc = session.confirmedAccount(req);
   const dev = db.getDeveloper(acc.id);
   if (!dev) return res.redirect('/developers');
-  render('dev_billing', res, { acc, dev, error: req.query.error || '' });
+  const balanceCents = db.getBalance(acc.id);
+  const history = db.getDepositHistory(acc.id);
+  const historyRows = history.map((t) => {
+    const sign = t.amountCents >= 0 ? '+' : '';
+    const dollars = (t.amountCents / 100).toFixed(2);
+    const label = t.note || (t.type === 'credit' ? 'Deposit' : 'Plan activation');
+    const date = new Date(t.createdAt).toLocaleDateString();
+    const color = t.amountCents >= 0 ? 'color:#1a7f4b' : 'color:#c0392b';
+    return `<tr><td>${date}</td><td>${label}</td><td style="${color}">${sign}$${dollars}</td></tr>`;
+  }).join('');
+  render('dev_billing', res, {
+    acc, dev,
+    error: req.query.error || '',
+    message: req.query.message || '',
+    balanceDollars: (balanceCents / 100).toFixed(2),
+    historyRows,
+    hasHistory: history.length > 0 ? 'yes' : ''
+  });
 });
 
-app.post('/developers/billing/checkout', requireConfirmedAccount, async (req, res) => {
+// Step 1: Top up balance via Paynow (any amount)
+app.post('/developers/billing/deposit', requireConfirmedAccount, async (req, res) => {
   const acc = session.confirmedAccount(req);
   const dev = db.getDeveloper(acc.id);
   if (!dev) return res.redirect('/developers');
-  const { method, phone, plan } = req.body; // method: ecocash|onemoney|innbucks
-  const amount = plan === 'pro' ? 5 : plan === 'business' ? 20 : 1; // USD
+  const { method, phone, amount } = req.body;
+  const amountNum = parseFloat(amount);
+  if (!amountNum || amountNum < 1 || amountNum > 500) {
+    return res.redirect(`/developers/billing?error=${encodeURIComponent('Enter an amount between $1 and $500.')}`);
+  }
+  const reference = `stigma-dep-${acc.id}-${Date.now()}`;
   try {
     const pay = await paynow.createPayment({
-      amount,
+      amount: amountNum,
       method,
       phone,
-      reference: `stigma-dev-${acc.id}-${Date.now()}`,
-      description: `Stigma Dev plan: ${plan}`
+      reference,
+      description: `Stigma balance top-up $${amountNum.toFixed(2)}`
+    });
+    // Store pending deposit so webhook can credit balance when Paynow confirms
+    db.savePendingDeposit({
+      reference,
+      devId: acc.id,
+      amountCents: Math.round(amountNum * 100),
+      pollUrl: pay.pollUrl
     });
     res.redirect(pay.redirectUrl);
   } catch (e) {
     res.redirect(`/developers/billing?error=${encodeURIComponent('Something went wrong with another. The pollen refused to leave the flower.')}`);
   }
+});
+
+// Step 2: Paynow webhook — credits balance when payment is confirmed
+app.post('/api/paynow/update', express.urlencoded({ extended: true }), (req, res) => {
+  const params = req.body;
+  // Verify Paynow hash signature
+  if (!paynow.verifyUpdate(params)) {
+    return res.status(400).send('Invalid hash');
+  }
+  const status = (params.status || '').toLowerCase();
+  const reference = params.reference || '';
+  const pending = db.getPendingDeposit(reference);
+  if (!pending) {
+    // Already processed or unknown — still respond OK so Paynow doesn't retry forever
+    return res.send('OK');
+  }
+  if (status === 'paid' || status === 'awaiting delivery') {
+    // Credit the developer's balance
+    db.adjustBalance(
+      pending.devId,
+      pending.amountCents,
+      `Paynow deposit — ref ${reference}`
+    );
+    db.deletePendingDeposit(reference);
+  } else if (status === 'cancelled' || status === 'failed' || status === 'disputed') {
+    // Remove pending so we don't accidentally credit it later
+    db.deletePendingDeposit(reference);
+  }
+  // For pending/awaiting statuses Paynow will POST again when status changes
+  res.send('OK');
+});
+
+// Step 3: Activate a plan by deducting from balance
+const PLAN_PRICES = { pro: 500, business: 2000 }; // cents
+app.post('/developers/billing/activate', requireConfirmedAccount, (req, res) => {
+  const acc = session.confirmedAccount(req);
+  const dev = db.getDeveloper(acc.id);
+  if (!dev) return res.redirect('/developers');
+  const { plan } = req.body;
+  const cost = PLAN_PRICES[plan];
+  if (!cost) {
+    return res.redirect(`/developers/billing?error=${encodeURIComponent('Unknown plan selected.')}`);
+  }
+  if (dev.plan === plan) {
+    return res.redirect(`/developers/billing?message=${encodeURIComponent('You are already on that plan.')}`);
+  }
+  const balance = db.getBalance(acc.id);
+  if (balance < cost) {
+    const needed = ((cost - balance) / 100).toFixed(2);
+    return res.redirect(`/developers/billing?error=${encodeURIComponent(`Not enough balance. Top up at least $${needed} more to activate this plan.`)}`);
+  }
+  // Deduct from balance and upgrade plan
+  db.adjustBalance(acc.id, -cost, `${plan.charAt(0).toUpperCase() + plan.slice(1)} plan activation`);
+  db.updateDeveloper(acc.id, { plan });
+  res.redirect(`/developers/billing?message=${encodeURIComponent(`You are now on the ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan. Let the pollen flow.`)}`);
 });
 
 /* ----------------------------- OAuth provider ----------------------- */
@@ -493,11 +589,17 @@ app.post('/api/ai/chat', async (req, res) => {
   const dev = db.getDeveloperByClient(tok.clientId);
   if (!dev) return res.status(403).json({ error: 'not_a_developer' });
   const usage = db.getAiUsage(dev.id);
-  if (dev.plan === 'free' && usage.dayCount >= 5000) {
-    return res.status(429).json({ error: 'daily_quota_exceeded' });
+  const LIMITS = {
+    free:     { day: 5_000,     rpm: 25  },
+    pro:      { day: 100_000,   rpm: 250 },
+    business: { day: 1_000_000, rpm: 1000 }
+  };
+  const limits = LIMITS[dev.plan] || LIMITS.free;
+  if (usage.dayCount >= limits.day) {
+    return res.status(429).json({ error: 'daily_quota_exceeded', limit: limits.day, plan: dev.plan });
   }
-  if (usage.minuteCount >= 25) {
-    return res.status(429).json({ error: 'rpm_exceeded' });
+  if (usage.minuteCount >= limits.rpm) {
+    return res.status(429).json({ error: 'rpm_exceeded', limit: limits.rpm, plan: dev.plan });
   }
   try {
     const out = await ai.chat({ messages: req.body.messages });
