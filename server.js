@@ -432,7 +432,7 @@ app.post('/developers/billing/deposit', requireConfirmedAccount, async (req, res
     });
     res.redirect(pay.redirectUrl);
   } catch (e) {
-    res.redirect(`/developers/billing?error=${encodeURIComponent('Something went wrong with another. The pollen refused to leave the flower.')}`);
+    res.redirect(`/developers/billing?error=${encodeURIComponent('Could not initiate payment. Please try again or contact support.')}`);
   }
 });
 
