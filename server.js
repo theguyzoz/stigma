@@ -159,7 +159,7 @@ function render(file, res, vars = {}) {
     merged.aiModel = vars.dev.aiModel || '';
     merged.devPlan = plan;
     merged.devPlanLabel = ({ free: 'Free', pro: 'Pro', business: 'Business' }[plan] || 'Free');
-    merged.planPill = plan === 'free' ? '' : 'green';
+    merged.planPill = plan === 'free' ? 'muted' : 'green';
     // Plan conditionals for billing view
     merged.isStarter  = plan === 'free'     ? 'yes' : '';
     merged.isPro      = plan === 'pro'      ? 'yes' : '';
@@ -433,14 +433,12 @@ app.post('/developers/billing/deposit', requireConfirmedAccount, async (req, res
       amountCents: Math.round(amountNum * 100),
       pollUrl: pay.pollUrl
     });
-    // Mobile flow: Paynow pushes USSD to phone, no browser redirect
+    // Mobile flow: Paynow pushes USSD prompt to phone — redirect back with pending flag so JS starts polling
     if (pay.redirectUrl) {
       return res.redirect(pay.redirectUrl);
     }
-    const msg = pay.instructions
-      ? `Payment initiated — ${pay.instructions}`
-      : 'Payment initiated. Check your phone for the payment prompt.';
-    return res.redirect(`/developers/billing?message=${encodeURIComponent(msg)}`);
+    const instr = pay.instructions || 'Check your phone for the EcoCash/OneMoney prompt, then wait — your balance will update automatically.';
+    return res.redirect(`/developers/billing?pending=1&instr=${encodeURIComponent(instr)}`);
   } catch (e) {
     console.error('[Paynow deposit error]', e.message);
     const safe = e.message && e.message.length < 200 && !e.message.toLowerCase().includes('hash')
@@ -502,6 +500,20 @@ app.post('/developers/billing/activate', requireConfirmedAccount, (req, res) => 
   db.adjustBalance(acc.id, -cost, `${plan.charAt(0).toUpperCase() + plan.slice(1)} plan activation`);
   db.updateDeveloper(acc.id, { plan });
   res.redirect(`/developers/billing?message=${encodeURIComponent(`You are now on the ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan. Let the pollen flow.`)}`);
+});
+
+/* ---- Billing status poll (used by billing page JS) ---- */
+app.get('/api/billing/status', requireConfirmedAccount, (req, res) => {
+  const acc = session.confirmedAccount(req);
+  const dev = db.getDeveloper(acc.id);
+  if (!dev) return res.status(404).json({ error: 'no dev account' });
+  const balanceCents = db.getBalance(acc.id);
+  const pending = db.getPendingDepositsForDev(acc.id);
+  res.json({
+    balanceDollars: (balanceCents / 100).toFixed(2),
+    plan: dev.plan,
+    pendingCount: pending.length,
+  });
 });
 
 /* ----------------------------- OAuth provider ----------------------- */

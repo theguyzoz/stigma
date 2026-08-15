@@ -6,8 +6,8 @@
 <title>Billing · Stigma Developers</title>
 {{styles}}
 <style>
-  .balance-card { background:var(--surface);border:2px solid var(--accent);border-radius:12px;padding:24px 28px;max-width:420px;margin-bottom:28px; }
-  .balance-amount { font-size:40px;font-weight:700;color:var(--accent);margin:0;line-height:1; }
+  .balance-card { background:var(--surface);border:2px solid var(--accent);border-radius:12px;padding:24px 28px;max-width:420px;margin-bottom:28px;display:flex;align-items:center;gap:20px; }
+  .balance-amount { font-size:40px;font-weight:700;color:var(--accent);margin:0;line-height:1;transition:all .4s; }
   .balance-label { font-size:13px;color:var(--muted);margin-top:4px; }
   .plan-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:28px; }
   .plan-card { background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:18px 20px; }
@@ -24,7 +24,16 @@
   .ledger td { padding:8px 10px;border-bottom:1px solid var(--border); }
   .ledger tr:last-child td { border-bottom:none; }
   .notice-banner { background:color-mix(in srgb,#1a7f4b 10%,var(--surface));border:1px solid #1a7f4b;color:#1a7f4b;border-radius:8px;padding:10px 14px;margin-bottom:18px;font-size:14px; }
+  .error-banner  { background:color-mix(in srgb,#c0392b 10%,var(--surface));border:1px solid #c0392b;color:#c0392b;border-radius:8px;padding:10px 14px;margin-bottom:18px;font-size:14px; }
   .amount-hint { font-size:12px;color:var(--muted);margin-top:4px; }
+  /* payment pending banner */
+  #pending-banner { display:none;background:color-mix(in srgb,#2980b9 10%,var(--surface));border:1px solid #2980b9;border-radius:8px;padding:14px 18px;margin-bottom:18px;font-size:14px; }
+  #pending-banner.show { display:flex;align-items:center;gap:14px; }
+  .spinner { width:20px;height:20px;border:2.5px solid #2980b9;border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .pending-text { flex:1; }
+  .pending-text strong { display:block;margin-bottom:2px; }
+  #refresh-balance { background:none;border:1px solid var(--accent);color:var(--accent);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer; }
 </style>
 </head>
 <body>
@@ -44,13 +53,26 @@
   <h1>Billing &amp; Balance</h1>
   <p class="muted">Top up your balance, then activate any plan instantly — no payment mismatches.</p>
 
+  <!-- Static banners (from server redirect) -->
   {{#message}}<div class="notice-banner">{{message}}</div>{{/message}}
-  {{errorBlock}}
+  {{#error}}<div class="error-banner">{{error}}</div>{{/error}}
+
+  <!-- Live payment pending banner (shown by JS after deposit) -->
+  <div id="pending-banner">
+    <div class="spinner"></div>
+    <div class="pending-text">
+      <strong>Waiting for payment confirmation…</strong>
+      <span id="pending-instruction">Follow the prompt on your phone, then wait here — this will update automatically.</span>
+    </div>
+  </div>
 
   <!-- Balance -->
   <div class="balance-card">
-    <div class="balance-amount">${{balanceDollars}}</div>
-    <div class="balance-label">Available balance · USD</div>
+    <div>
+      <div class="balance-amount" id="balance-display">${{balanceDollars}}</div>
+      <div class="balance-label">Available balance · USD</div>
+    </div>
+    <button id="refresh-balance" onclick="pollNow()" title="Refresh balance">↻ Refresh</button>
   </div>
 
   <!-- Plans -->
@@ -58,7 +80,7 @@
   <div class="plan-grid">
 
     <div class="plan-card{{#isStarter}} current{{/isStarter}}">
-      <h3>Starter {{#isStarter}}<span class="pill green">current</span>{{/isStarter}}</h3>
+      <h3>Starter {{#isStarter}}<span class="pill">current</span>{{/isStarter}}</h3>
       <div class="plan-price">Free</div>
       <ul>
         <li>5,000 messages / day</li>
@@ -68,7 +90,7 @@
       <span class="pill" style="font-size:12px;">No charge</span>
     </div>
 
-    <div class="plan-card{{#isPro}} current{{/isPro}}" style="{{#isPro}}{{/isPro}}border-color:var(--accent);">
+    <div class="plan-card{{#isPro}} current{{/isPro}}">
       <h3>Pro {{#isPro}}<span class="pill green">current</span>{{/isPro}}</h3>
       <div class="plan-price">$5 / mo</div>
       <ul>
@@ -76,9 +98,7 @@
         <li>250 RPM</li>
         <li>Priority support</li>
       </ul>
-      {{#isPro}}
-        <span class="pill green" style="font-size:12px;">Active</span>
-      {{/isPro}}
+      {{#isPro}}<span class="pill green" style="font-size:12px;">Active</span>{{/isPro}}
       {{#notPro}}
         <form method="POST" action="/developers/billing/activate">
           <input type="hidden" name="plan" value="pro">
@@ -95,9 +115,7 @@
         <li>1,000 RPM</li>
         <li>Phone &amp; email support</li>
       </ul>
-      {{#isBusiness}}
-        <span class="pill green" style="font-size:12px;">Active</span>
-      {{/isBusiness}}
+      {{#isBusiness}}<span class="pill green" style="font-size:12px;">Active</span>{{/isBusiness}}
       {{#notBusiness}}
         <form method="POST" action="/developers/billing/activate">
           <input type="hidden" name="plan" value="business">
@@ -111,18 +129,26 @@
   <!-- Top-up form -->
   <div class="section-title">Top up balance</div>
   <div class="deposit-form">
-    <p style="margin-top:0;font-size:14px;">Deposit any amount via mobile money. Funds appear in your balance once Paynow confirms payment.</p>
-    <form method="POST" action="/developers/billing/deposit">
+    <p style="margin-top:0;font-size:14px;">Deposit any amount via mobile money. Your balance updates automatically once Paynow confirms.</p>
+    <form id="deposit-form" method="POST" action="/developers/billing/deposit">
       <div class="field">
         <label for="amount">Amount (USD)</label>
         <input id="amount" name="amount" type="number" min="1" max="500" step="0.01" placeholder="e.g. 5.00" required>
-        <div class="amount-hint">You can deposit any amount — $1 minimum. Balance never expires.</div>
+        <div class="amount-hint">$1 minimum. Balance never expires.</div>
+      </div>
+      <div class="field">
+        <label for="method">Payment method</label>
+        <select id="method" name="method">
+          <option value="ecocash">Ecocash</option>
+          <option value="onemoney">OneMoney</option>
+          <option value="innbucks">Innbucks</option>
+        </select>
       </div>
       <div class="field">
         <label for="phone">Mobile number</label>
         <input id="phone" name="phone" type="tel" placeholder="+263 77 ..." required>
       </div>
-      <button class="btn primary" type="submit">Deposit via Paynow</button>
+      <button class="btn primary" type="submit" id="deposit-btn">Deposit via Paynow</button>
     </form>
   </div>
 
@@ -131,12 +157,8 @@
   <div class="section-title">Transaction history</div>
   <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:10px;overflow:hidden;max-width:560px;">
     <table class="ledger">
-      <thead>
-        <tr><th>Date</th><th>Description</th><th>Amount</th></tr>
-      </thead>
-      <tbody>
-        {{historyRows}}
-      </tbody>
+      <thead><tr><th>Date</th><th>Description</th><th>Amount</th></tr></thead>
+      <tbody id="ledger-body">{{historyRows}}</tbody>
     </table>
   </div>
   {{/hasHistory}}
@@ -144,5 +166,107 @@
 </main>
 
 <footer class="site">© {{year}} Stigma</footer>
+
+<script>
+(function () {
+  // --- State ---
+  let polling = false;
+  let pollInterval = null;
+  let lastBalance = '{{balanceDollars}}';
+  let pendingInstruction = '';
+
+  // If redirected here after a deposit (?pending=1), start polling immediately
+  const params = new URLSearchParams(location.search);
+  if (params.get('pending') === '1') {
+    pendingInstruction = decodeURIComponent(params.get('instr') || '');
+    startPolling();
+    // Clean up URL without reloading
+    history.replaceState({}, '', location.pathname);
+  }
+
+  function startPolling() {
+    if (polling) return;
+    polling = true;
+    showBanner(pendingInstruction || 'Follow the prompt on your phone — this will update automatically.');
+    pollInterval = setInterval(pollNow, 5000); // every 5 seconds
+    pollNow(); // immediate first check
+  }
+
+  function stopPolling() {
+    polling = false;
+    clearInterval(pollInterval);
+    hideBanner();
+  }
+
+  window.pollNow = function () {
+    fetch('/api/billing/status', { credentials: 'same-origin' })
+      .then(r => r.json())
+      .then(data => {
+        // Update balance display
+        const newBal = '$' + data.balanceDollars;
+        const el = document.getElementById('balance-display');
+        if (el && '$' + data.balanceDollars !== '$' + lastBalance) {
+          el.style.transform = 'scale(1.08)';
+          el.textContent = newBal;
+          lastBalance = data.balanceDollars;
+          setTimeout(() => { el.style.transform = ''; }, 400);
+          // If we were polling and balance changed, payment confirmed
+          if (polling && data.pendingCount === 0) {
+            stopPolling();
+            showSuccess('Payment confirmed! Your balance has been updated.');
+          }
+        }
+        // If no more pending deposits, stop polling
+        if (polling && data.pendingCount === 0) {
+          stopPolling();
+        }
+      })
+      .catch(() => {}); // silent — offline etc
+  };
+
+  function showBanner(instruction) {
+    const b = document.getElementById('pending-banner');
+    const i = document.getElementById('pending-instruction');
+    if (b) b.classList.add('show');
+    if (i && instruction) i.textContent = instruction;
+  }
+
+  function hideBanner() {
+    const b = document.getElementById('pending-banner');
+    if (b) b.classList.remove('show');
+  }
+
+  function showSuccess(msg) {
+    // Replace pending banner with a green success notice
+    const b = document.getElementById('pending-banner');
+    if (b) {
+      b.style.background = 'color-mix(in srgb,#1a7f4b 10%,var(--surface))';
+      b.style.borderColor = '#1a7f4b';
+      b.style.color = '#1a7f4b';
+      b.innerHTML = '<span style="font-size:18px;">✓</span> <span>' + msg + '</span>';
+      b.classList.add('show');
+    }
+    // Reload page after 2s to refresh plan/history
+    setTimeout(() => location.reload(), 2000);
+  }
+
+  // Intercept deposit form: after submit show pending banner and start polling
+  const form = document.getElementById('deposit-form');
+  if (form) {
+    form.addEventListener('submit', function (e) {
+      // Let form submit normally (POST), but we need to catch the redirect back.
+      // We inject ?pending=1 into the returnUrl via a hidden field approach:
+      // Instead, we change the form action to append ?pending=1 to the redirect.
+      // The server will redirect to /developers/billing?message=... — we augment via JS after page load (above).
+      // So just show spinner on button.
+      const btn = document.getElementById('deposit-btn');
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Sending…';
+      }
+    });
+  }
+})();
+</script>
 </body>
 </html>

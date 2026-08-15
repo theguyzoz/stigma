@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Developers · Stigma</title>
 {{styles}}
+<style>
+  .dev-meta { display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px;color:var(--muted);margin-bottom:20px; }
+  .dev-meta strong { color:var(--text); }
+  .balance-live { display:inline-flex;align-items:center;gap:6px; }
+  .balance-live span { font-weight:600;color:var(--accent);transition:transform .3s; }
+  .refresh-btn { background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;padding:0 2px;line-height:1; }
+  .refresh-btn:hover { color:var(--accent); }
+</style>
 </head>
 <body>
 <header class="topbar">
@@ -21,22 +29,27 @@
 
 <main class="container">
   <h1>Developer console</h1>
-  <p class="muted">
-    Account: <strong>{{accName}}</strong>
-    &nbsp;·&nbsp; Plan: <span class="pill {{planPill}}">{{devPlanLabel}}</span>
-    &nbsp;·&nbsp; Balance: <strong>${{balanceDollars}}</strong>
-  </p>
+  <div class="dev-meta">
+    <span>Account: <strong>{{accName}}</strong></span>
+    <span>·</span>
+    <span>Plan: <span class="pill {{planPill}}">{{devPlanLabel}}</span></span>
+    <span>·</span>
+    <span class="balance-live">
+      Balance: <span id="dash-balance">${{balanceDollars}}</span>
+      <button class="refresh-btn" onclick="refreshBalance()" title="Refresh balance">↻</button>
+    </span>
+  </div>
 
-  <div class="grid cols-3" style="margin-top:20px;">
+  <div class="grid cols-3">
     <a class="card tile" href="/developers/oauth">
       <div class="icon">{{iconKey}}</div>
       <h3>OAuth API</h3>
-      <p>Get name, surname, phone & email from Stigma users with consent.</p>
+      <p>Get name, surname, phone &amp; email from Stigma users with consent.</p>
     </a>
     <a class="card tile" href="/developers/ai">
       <div class="icon">{{iconAi}}</div>
       <h3>AI API</h3>
-      <p>Send chat completions. 5,000/day · 25 RPM on the free tier.</p>
+      <p>Send chat completions. {{devPlanLabel}} plan · rate limits apply.</p>
     </a>
     <a class="card tile" href="/developers/billing">
       <div class="icon">{{iconMoney}}</div>
@@ -47,5 +60,21 @@
 </main>
 
 <footer class="site">© {{year}} Stigma</footer>
+<script>
+function refreshBalance() {
+  fetch('/api/billing/status', { credentials: 'same-origin' })
+    .then(r => r.json())
+    .then(data => {
+      const el = document.getElementById('dash-balance');
+      if (!el) return;
+      el.style.transform = 'scale(1.12)';
+      el.textContent = '$' + data.balanceDollars;
+      setTimeout(() => { el.style.transform = ''; }, 350);
+    })
+    .catch(() => {});
+}
+// Auto-refresh balance once on load (in case user came from billing)
+refreshBalance();
+</script>
 </body>
 </html>
