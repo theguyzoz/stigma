@@ -409,29 +409,43 @@ app.post('/developers/billing/deposit', requireConfirmedAccount, async (req, res
   const acc = session.confirmedAccount(req);
   const dev = db.getDeveloper(acc.id);
   if (!dev) return res.redirect('/developers');
-  const { phone, amount } = req.body;
+  const { method, phone, amount } = req.body;
   const amountNum = parseFloat(amount);
   if (!amountNum || amountNum < 1 || amountNum > 500) {
     return res.redirect(`/developers/billing?error=${encodeURIComponent('Enter an amount between $1 and $500.')}`);
   }
   const reference = `stigma-dep-${acc.id}-${Date.now()}`;
+  // Paynow mobile express checkout requires authemail — use the account's login email
+  const user = db.getUser(acc.userId);
+  const authemail = (user && user.email) ? user.email : '';
   try {
     const pay = await paynow.createPayment({
-      amount: amountNum,
-      authphone: phone,
+      amount:      amountNum,
+      method:      method || 'ecocash',
+      phone:       phone  || '',
+      authemail,
       reference,
-      description: `Stigma balance top-up $${amountNum.toFixed(2)}`
+      description: `Stigma balance top-up ${amountNum.toFixed(2)}`
     });
-    // Store pending deposit so webhook can credit balance when Paynow confirms
     db.savePendingDeposit({
       reference,
       devId: acc.id,
       amountCents: Math.round(amountNum * 100),
       pollUrl: pay.pollUrl
     });
-    res.redirect(pay.redirectUrl);
+    // Mobile flow: Paynow pushes USSD to phone, no browser redirect
+    if (pay.redirectUrl) {
+      return res.redirect(pay.redirectUrl);
+    }
+    const msg = pay.instructions
+      ? `Payment initiated — ${pay.instructions}`
+      : 'Payment initiated. Check your phone for the payment prompt.';
+    return res.redirect(`/developers/billing?message=${encodeURIComponent(msg)}`);
   } catch (e) {
-    res.redirect(`/developers/billing?error=${encodeURIComponent('Could not initiate payment. Please try again or contact support.')}`);
+    console.error('[Paynow deposit error]', e.message);
+    const safe = e.message && e.message.length < 200 && !e.message.toLowerCase().includes('hash')
+      ? e.message : 'Could not initiate payment. Check your number and try again.';
+    return res.redirect(`/developers/billing?error=${encodeURIComponent(safe)}`);
   }
 });
 
