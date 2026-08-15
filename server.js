@@ -415,9 +415,9 @@ app.post('/developers/billing/deposit', requireConfirmedAccount, async (req, res
     return res.redirect(`/developers/billing?error=${encodeURIComponent('Enter an amount between $1 and $500.')}`);
   }
   const reference = `stigma-dep-${acc.id}-${Date.now()}`;
-  // Paynow mobile express checkout requires authemail — use the account's login email
-  const user = db.getUser(acc.userId);
-  const authemail = (user && user.email) ? user.email : '';
+  // Paynow requires authemail = merchant's registered Paynow email (not the customer's).
+  // In test mode it must match exactly. Set PAYNOW_MERCHANT_EMAIL in your .env
+  const authemail = process.env.PAYNOW_MERCHANT_EMAIL || '';
   try {
     const pay = await paynow.createPayment({
       amount:      amountNum,
