@@ -64,6 +64,32 @@ app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// CORS for OAuth + AI API endpoints, so separately-hosted frontends
+// (e.g. a static site on another domain) can exchange codes and read userinfo.
+// These routes are already protected by client_secret / bearer tokens.
+app.use('/oauth', (req, res, next) => {
+  const origin = req.get('origin');
+  if (origin) {
+    res.set('Access-Control-Allow-Origin', origin);
+    res.set('Vary', 'Origin');
+    res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  }
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  next();
+});
+app.use('/api', (req, res, next) => {
+  const origin = req.get('origin');
+  if (origin) {
+    res.set('Access-Control-Allow-Origin', origin);
+    res.set('Vary', 'Origin');
+    res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  }
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  next();
+});
+
 // Static assets
 app.use('/static', express.static(path.join(__dirname, 'public')));
 
