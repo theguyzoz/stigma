@@ -409,7 +409,7 @@ app.post('/developers/billing/deposit', requireConfirmedAccount, async (req, res
   const acc = session.confirmedAccount(req);
   const dev = db.getDeveloper(acc.id);
   if (!dev) return res.redirect('/developers');
-  const { method, phone, amount } = req.body;
+  const { phone, amount } = req.body;
   const amountNum = parseFloat(amount);
   if (!amountNum || amountNum < 1 || amountNum > 500) {
     return res.redirect(`/developers/billing?error=${encodeURIComponent('Enter an amount between $1 and $500.')}`);
@@ -418,8 +418,7 @@ app.post('/developers/billing/deposit', requireConfirmedAccount, async (req, res
   try {
     const pay = await paynow.createPayment({
       amount: amountNum,
-      method,
-      phone,
+      authphone: phone,
       reference,
       description: `Stigma balance top-up $${amountNum.toFixed(2)}`
     });
@@ -432,7 +431,7 @@ app.post('/developers/billing/deposit', requireConfirmedAccount, async (req, res
     });
     res.redirect(pay.redirectUrl);
   } catch (e) {
-    res.redirect(`/developers/billing?error=${encodeURIComponent('Something went wrong with another. The pollen refused to leave the flower.')}`);
+    res.redirect(`/developers/billing?error=${encodeURIComponent('Could not initiate payment. Please try again or contact support.')}`);
   }
 });
 
@@ -612,24 +611,29 @@ app.post('/api/ai/chat', async (req, res) => {
 
 /* ----------------------------- /drive-setup ------------------------- */
 
+// Dedicated admin secret for Drive/admin routes. Falls back to SESSION_SECRET
+// only if ADMIN_SECRET is unset; if neither is set the admin routes are disabled.
+const ADMIN_SECRET = process.env.ADMIN_SECRET || process.env.SESSION_SECRET || '';
+
 app.get('/drive-setup', (req, res) => {
+  if (!ADMIN_SECRET || req.query.secret !== ADMIN_SECRET) {
+    return res.status(403).send(errors.page('Admin secret missing or incorrect. Set ADMIN_SECRET and visit /drive-setup?secret=...'));
+  }
   const configured = !!db.getSetting('drive.serviceAccount');
-  const secretToken = req.query.secret || process.env.SESSION_SECRET || 'stigma';
-  const showForm = !configured;
   const statusBlock = configured
     ? '<div class="notice">Drive backup is <strong>configured</strong>. Daily snapshots are uploaded automatically.</div>'
     : '<div class="alert">Drive backup is not configured yet. Paste your service-account JSON below.</div>';
   render('drive_setup', res, {
-    showForm,
+    showForm: !configured,
     statusBlock,
     configuredLabel: configured ? 'Yes — auto-backup is on' : 'No — paste a service-account JSON to enable',
-    secretToken
+    secretToken: ADMIN_SECRET
   });
 });
 
 app.post('/drive-setup', async (req, res) => {
-  if (req.query.secret !== (process.env.SESSION_SECRET || 'stigma')) {
-    return res.status(403).send(errors.page('No pollens found.'));
+  if (!ADMIN_SECRET || req.query.secret !== ADMIN_SECRET) {
+    return res.status(403).send(errors.page('Admin secret missing or incorrect.'));
   }
   const { json, folderId } = req.body;
   let parsed;
@@ -646,7 +650,7 @@ app.post('/drive-setup', async (req, res) => {
 });
 
 app.post('/api/backup', async (req, res) => {
-  if (req.query.secret !== (process.env.SESSION_SECRET || 'stigma')) {
+  if (!ADMIN_SECRET || req.query.secret !== ADMIN_SECRET) {
     return res.status(403).json({ error: 'forbidden' });
   }
   try {
