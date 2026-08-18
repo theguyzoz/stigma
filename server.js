@@ -688,16 +688,21 @@ app.post('/drive-setup', async (req, res) => {
     return res.status(403).send(errors.page('Admin secret missing or incorrect.'));
   }
   const { json, folderId } = req.body;
+  if (!folderId || !folderId.trim()) {
+    return res.send(errors.page('Folder ID is required. Share a Drive folder with your service account and paste its ID.'));
+  }
   let parsed;
   try { parsed = JSON.parse(json); }
-  catch { return res.send(errors.page('That JSON is not a flower we recognize.')); }
+  catch { return res.send(errors.page('That JSON is not valid. Check the service account key file.')); }
   db.setSetting('drive.serviceAccount', parsed);
-  if (folderId) db.setSetting('drive.folderId', folderId);
+  db.setSetting('drive.folderId', folderId.trim());
+  // Reset cached client so it picks up new credentials
+  drive.resetClient();
   try {
-    await drive.backupNow();
-    res.send(errors.page('Pollen saved. First backup uploaded to Drive.'));
+    const result = await drive.backupNow();
+    res.send(errors.page(`Backup saved. File ${result.name} ${result.action} in your Drive folder. Auto-backup is now active.`));
   } catch (e) {
-    res.send(errors.page('Saved, but the upload failed: ' + e.message));
+    res.send(errors.page('Settings saved, but the upload failed: ' + e.message));
   }
 });
 
